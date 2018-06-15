@@ -1,0 +1,41 @@
+{
+  "name": "wxapp-sketchpad",
+  "version": "0.1.0",
+  "description": "微信小程序快速绘画工具",
+  "main": "./dist/index.js",
+  "module": "./dist/index.esm.js",
+  "scripts": {
+    "build": "node build/build.js",
+    "dev": "node build/dev.js",
+    "lint": "eslint src/**.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mrminfive/wxapp-sketchpad.git"
+  },
+  "keywords": [
+    "wechat",
+    "wxapp",
+    "canvas"
+  ],
+  "author": "minfive",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Mrminfive/wxapp-sketchpad/issues"
+  },
+  "homepage": "https://github.com/Mrminfive/wxapp-sketchpad#readme",
+  "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-eslint": "^8.2.3",
+    "babel-plugin-external-helpers": "^6.22.0",
+    "babel-preset-env": "^1.7.0",
+    "chalk": "^2.4.1",
+    "chokidar": "^2.0.3",
+    "eslint": "^4.19.1",
+    "eslint-config-mlint": "^1.0.1",
+    "precommit-hook": "^3.0.0",
+    "rollup": "^0.60.7",
+    "rollup-plugin-babel": "^3.0.4",
+    "rollup-plugin-node-resolve": "^3.3.0"
+  }
+}

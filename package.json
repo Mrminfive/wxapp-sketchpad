@@ -7,7 +7,7 @@
   "scripts": {
     "build": "node build/build.js",
     "dev": "node build/dev.js",
-    "lint": "eslint src/**.js"
+    "lint": "node build/lint.js"
   },
   "pre-commit": [
     "lint"

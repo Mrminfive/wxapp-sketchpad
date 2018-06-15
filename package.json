@@ -9,6 +9,9 @@
     "dev": "node build/dev.js",
     "lint": "eslint src/**.js"
   },
+  "pre-commit": [
+    "lint"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Mrminfive/wxapp-sketchpad.git"
@@ -33,7 +36,7 @@
     "chokidar": "^2.0.3",
     "eslint": "^4.19.1",
     "eslint-config-mlint": "^1.0.1",
-    "precommit-hook": "^3.0.0",
+    "pre-commit": "^1.2.2",
     "rollup": "^0.60.7",
     "rollup-plugin-babel": "^3.0.4",
     "rollup-plugin-node-resolve": "^3.3.0"

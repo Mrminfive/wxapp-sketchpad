@@ -1,4 +1,13 @@
 
 <view class="container">
-
+    <view class="header">
+        <view class="title">wxapp-sketchpad</view>
+        <view class="sub-title">小程序快速绘图工具</view>
+    </view>
+    <view class="main">
+        <view class="hint">点击按钮获取用户信息以绘制图片</view>
+    </view>
+    <button class="btn" lang="zh_CN" open-type="getUserInfo" bindgetuserinfo="bindRenderCanvas">授权</button>
 </view>
+
+<m-canvas wx:if="{{showCanvas}}" info="{{info}}"></m-canvas>

@@ -1,0 +1,12 @@
+
+<view class="m-canvas__wrap">
+    <canvas
+        class="m-canvas"
+        canvas-id="m-canvas"
+        bindlongtap="bindLongTap"
+        disable-scroll></canvas>
+    
+    <view class="m-canvas__footer">
+        <button class="m-canvas__btn">保存图片到本地</button>
+    </view>
+</view>

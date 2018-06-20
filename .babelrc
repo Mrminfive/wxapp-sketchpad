@@ -1,17 +1,21 @@
 {
     "presets": [
-        [
-            "env", {
-                "targets": {
-                    "browsers": [
-                        "last 2 versions"
-                    ]
-                },
-                "modules": false
-            }
-        ]
+        "stage-3",
+        ["env", {
+            "targets": {
+                "browsers": [
+                    "last 2 versions"
+                ]
+            },
+            "modules": false
+        }]
     ],
     "plugins": [
+        ["transform-runtime", {
+            "helpers": false,
+            "polyfill": false,
+            "regenerator": true
+        }],
         "external-helpers"
     ]
 }

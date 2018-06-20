@@ -21,7 +21,7 @@ const lint = function(files) {
 };
 
 const getDiff = function() {
-    const cmd = "git diff HEAD --name-only --diff-filter=ACMR | grep -E '.js$'";
+    const cmd = "git diff HEAD --name-only --diff-filter=ACMR | grep -v 'example' | grep -v 'dist' | grep -E '.js$'";
 
     return new Promise((resolve, reject) => {
         exec(cmd, (error, stdout, stderr) => {

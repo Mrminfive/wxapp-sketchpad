@@ -8,6 +8,7 @@
  */
 
 const babel = require('rollup-plugin-babel');
+const commonjs = require('rollup-plugin-commonjs');
 const nodeResolve = require('rollup-plugin-node-resolve');
 const version = process.env.VERSION || require('../package.json').version;
 const banner =
@@ -24,10 +25,11 @@ module.exports = {
         input: resolve('../src/index.js'),
         plugins: [
             nodeResolve(),
+            commonjs(),
             babel({
-                exclude: 'node_modules/**',
                 babelrc: true,
-                comments: true,
+                comments: false,
+                externalHelpers: false,
                 runtimeHelpers: true
             })
         ]

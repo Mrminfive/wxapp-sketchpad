@@ -1,8 +1,19 @@
 
-.m-canvas {
+.m-canvas__wrap {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.m-canvas {
+    flex: 1;
+    width: 100%;
+}
+
+.m-canvas__btn {
+    background-color: #aad375;
 }

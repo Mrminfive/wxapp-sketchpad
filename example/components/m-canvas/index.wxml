@@ -2,8 +2,9 @@
 <view class="m-canvas__wrap">
     <canvas
         class="m-canvas"
+        id="m-canvas"
         canvas-id="m-canvas"
-        bindlongtap="bindLongTap"
+        style="{{width ? 'width: ' + width + ';' : ''}}{{height ? 'height: ' + height + ';' : ''}}"
         disable-scroll></canvas>
     
     <view class="m-canvas__footer">

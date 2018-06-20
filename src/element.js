@@ -9,19 +9,22 @@
 
 export default class Element {
     constructor(config) {
-        console.log('create element');
-        this.config = config || {};
+        this.config = {
+            zIndex: 0,
+            ...config
+        };
     }
 
     /**
      * 暴露给场景的渲染方法
      * 在该方法中执行当前节点的内容渲染
      *
-     * @param {Object} ctx 特殊处理过后的 canvas 上下文
+     * @param {Object} ctx canvas 绘图上下文
+     * @param {Function} adaptation 尺寸适配器
      * @api public
      */
-    render(ctx) {
-        console.log(ctx);
+    render(ctx, adaptation) {
+        // to do some thing
     }
 
     /**

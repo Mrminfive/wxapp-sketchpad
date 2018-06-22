@@ -730,27 +730,6 @@ if (hadRuntime) {
 
 var regenerator = runtimeModule;
 
-var Element = function () {
-    function Element(config) {
-        classCallCheck(this, Element);
-
-        this.config = _extends({
-            zIndex: 0
-        }, config);
-    }
-
-    createClass(Element, [{
-        key: "render",
-        value: function render(ctx, adaptation) {}
-    }, {
-        key: "preload",
-        value: function preload(config) {
-            return Promise.resolve();
-        }
-    }]);
-    return Element;
-}();
-
 var downloadFile = function () {
     var _ref = asyncToGenerator(regenerator.mark(function _callee(url) {
         var _ref2, tempFilePath, statusCode;
@@ -906,6 +885,265 @@ var utils = /*#__PURE__*/Object.freeze({
 	saveImageToPhotosAlbum: saveImageToPhotosAlbum
 });
 
+var COLOR_TRANSPRENT = 'transprent';
+
+var Element = function () {
+    function Element(config) {
+        classCallCheck(this, Element);
+
+        this.config = _extends({
+            left: 0,
+            top: 0,
+            width: '100%',
+            height: null,
+            border: null,
+            padding: [0, 0, 0, 0],
+            text: '',
+            fontSize: '20px',
+            lineHeight: 1.3,
+            textAlign: 'left',
+            textVerticalAlign: 'top',
+            color: '#000000',
+            fontWeight: 'normal',
+            fontStyle: 'normal',
+            fontFamily: 'sans-serif',
+            backgroundColor: COLOR_TRANSPRENT,
+            backgroundImage: null,
+            backgroundSize: null,
+            zIndex: 0
+        }, config);
+    }
+
+    createClass(Element, [{
+        key: '_processText',
+        value: function _processText(text, maxWidth) {
+            var config = this.config,
+                _ctx = this._ctx,
+                _adaptation = this._adaptation;
+
+            var len = text.length;
+            var idx = len;
+
+            _ctx.font = [config.fontStyle, config.fontWeigth, _adaptation(0, parseFloat(config.fontSize))[1] + 'px', config.fontFamily].filter(function (val) {
+                return val != null;
+            }).join(' ');
+
+            while (idx >= 1) {
+                var beforeStr = text.substring(0, idx);
+
+                var strWidth = _ctx.measureText(beforeStr).width;
+                if (strWidth <= maxWidth) {
+                    return idx === len ? [{ text: beforeStr, width: strWidth }] : [{ text: beforeStr, width: strWidth }].concat(this._processText(text.substring(idx), maxWidth));
+                } else {
+                    idx--;
+                }
+            }
+        }
+    }, {
+        key: '_processBorder',
+        value: function _processBorder() {
+            var border = this.config.border;
+
+            var borderStr = border == null ? '0 #000000' : border;
+            var borderSetting = borderStr.split(' ');
+
+            return {
+                width: this._adaptation(parseFloat(borderSetting[0]), 0)[0],
+                color: borderSetting[1]
+            };
+        }
+    }, {
+        key: '_adaptationSetting',
+        value: function _adaptationSetting() {
+            var _this = this;
+
+            var config = this.config,
+                _adaptation = this._adaptation;
+
+            var border = this._processBorder();
+            var adaptationConfig = {
+                position: _adaptation(config.left, config.top),
+                border: border,
+                borderWidth: border.width,
+                padding: [_adaptation(0, config.padding[0])[1], _adaptation(config.padding[1], 0)[0], _adaptation(0, config.padding[2])[1], _adaptation(config.padding[3], 0)[0]],
+                fontSize: _adaptation(0, parseFloat(config.fontSize))[1]
+            };
+
+            adaptationConfig.lineHeight = typeof config.lineHeight === 'number' ? config.lineHeight * adaptationConfig.fontSize : _adaptation(0, parseFloat(config.lineHeight))[1];
+
+            var calcRect = function calcRect() {
+                var padding = adaptationConfig.padding,
+                    borderWidth = adaptationConfig.borderWidth;
+
+                var paddingSize = [padding[1] + padding[3], padding[0] + padding[2]];
+                var borderSize = [borderWidth * 2, borderWidth * 2];
+                var rectWidth = _adaptation(config.width, 0)[0];
+                var containerWidth = rectWidth - paddingSize[0] - borderSize[0];
+                var contentStrs = _this._processText(config.text, containerWidth);
+
+                Object.assign(adaptationConfig, {
+                    rect: {
+                        width: rectWidth,
+                        height: config.height == null ? contentStrs.length * adaptationConfig.lineHeight + borderSize[1] + paddingSize[1] : _adaptation(0, config.height)[1]
+                    },
+                    content: contentStrs
+                });
+
+                Object.assign(adaptationConfig, {
+                    containerWidth: containerWidth,
+                    containerHeight: adaptationConfig.rect.height - borderSize[1] - paddingSize[1]
+                });
+            };
+
+            calcRect();
+
+            this._adaptationConfig = adaptationConfig;
+        }
+    }, {
+        key: '_drawContainer',
+        value: function _drawContainer() {
+            var _ctx = this._ctx,
+                _adaptationConfig = this._adaptationConfig;
+            var position = _adaptationConfig.position,
+                border = _adaptationConfig.border,
+                padding = _adaptationConfig.padding,
+                containerWidth = _adaptationConfig.containerWidth,
+                containerHeight = _adaptationConfig.containerHeight;
+
+            _ctx.beginPath();
+            _ctx.rect(position[0] + border.width + padding[3], position[1] + border.width + padding[0], containerWidth, containerHeight);
+            _ctx.clip();
+        }
+    }, {
+        key: '_drawBorder',
+        value: function _drawBorder() {
+            var _ctx = this._ctx,
+                _adaptationConfig = this._adaptationConfig;
+            var _adaptationConfig$rec = _adaptationConfig.rect,
+                width = _adaptationConfig$rec.width,
+                height = _adaptationConfig$rec.height;
+            var border = _adaptationConfig.border;
+
+
+            if (border.width === 0) return;
+
+            _ctx.setLineWidth(border.width);
+            _ctx.setStrokeStyle(border.color);
+            _ctx.strokeRect.apply(_ctx, toConsumableArray(_adaptationConfig.position.map(function (num) {
+                return num + border.width / 2;
+            })).concat([width - border.width, height - border.width]));
+        }
+    }, {
+        key: '_drawBackground',
+        value: function _drawBackground(ctx, adaptation) {
+            var _ctx = this._ctx,
+                _adaptationConfig = this._adaptationConfig,
+                config = this.config;
+            var _adaptationConfig$rec2 = _adaptationConfig.rect,
+                width = _adaptationConfig$rec2.width,
+                height = _adaptationConfig$rec2.height;
+            var border = _adaptationConfig.border;
+
+
+            if (config.backgroundColor && config.backgroundColor !== COLOR_TRANSPRENT) {
+                _ctx.setFillStyle(config.backgroundColor);
+                _ctx.fillRect.apply(_ctx, toConsumableArray(_adaptationConfig.position.map(function (num) {
+                    return num + border.width;
+                })).concat([width - border.width * 2, height - border.width * 2]));
+            }
+            if (config.backgroundImage) {
+                _ctx.drawImage.apply(_ctx, [this._bgImage].concat(toConsumableArray(_adaptationConfig.position.map(function (num) {
+                    return num + border.width;
+                })), [width - border.width * 2, height - border.width * 2]));
+            }
+        }
+    }, {
+        key: '_drawContent',
+        value: function _drawContent() {
+            var _ctx = this._ctx,
+                _adaptationConfig = this._adaptationConfig,
+                config = this.config;
+            var content = _adaptationConfig.content,
+                position = _adaptationConfig.position,
+                border = _adaptationConfig.border,
+                padding = _adaptationConfig.padding,
+                lineHeight = _adaptationConfig.lineHeight,
+                containerWidth = _adaptationConfig.containerWidth,
+                containerHeight = _adaptationConfig.containerHeight,
+                fontSize = _adaptationConfig.fontSize;
+
+            var alignMap = {
+                'top': 0,
+                'middle': 0.5,
+                'bottom': 1,
+                'left': 0,
+                'center': 0.5,
+                'right': 1
+            };
+
+            _ctx.font = [config.fontStyle, config.fontWeigth, fontSize + 'px', config.fontFamily].filter(function (val) {
+                return val != null;
+            }).join(' ');
+            _ctx.setFillStyle(config.color);
+
+            _ctx.setTextBaseline('middle');
+
+            content.forEach(function (item, idx) {
+                _ctx.fillText(item.text, position[0] + border.width + padding[3] + alignMap[config.textAlign] * (containerWidth - item.width), position[1] + border.width + padding[0] + lineHeight * (idx + 0.5) + alignMap[config.textVerticalAlign] * (containerHeight - content.length * lineHeight), containerWidth);
+            });
+        }
+    }, {
+        key: 'render',
+        value: function render(ctx, adaptation) {
+            this._ctx = ctx;
+            this._adaptation = adaptation;
+
+            this._adaptationSetting();
+            this._drawBorder();
+            this._drawBackground();
+            this._drawContainer();
+            this._drawContent();
+        }
+    }, {
+        key: 'preload',
+        value: function () {
+            var _ref = asyncToGenerator(regenerator.mark(function _callee() {
+                var backgroundImage;
+                return regenerator.wrap(function _callee$(_context) {
+                    while (1) {
+                        switch (_context.prev = _context.next) {
+                            case 0:
+                                backgroundImage = this.config.backgroundImage;
+
+                                if (!backgroundImage) {
+                                    _context.next = 5;
+                                    break;
+                                }
+
+                                _context.next = 4;
+                                return downloadFile(backgroundImage);
+
+                            case 4:
+                                this._bgImage = _context.sent;
+
+                            case 5:
+                            case 'end':
+                                return _context.stop();
+                        }
+                    }
+                }, _callee, this);
+            }));
+
+            function preload() {
+                return _ref.apply(this, arguments);
+            }
+
+            return preload;
+        }()
+    }]);
+    return Element;
+}();
+
 var Scene = function () {
     function Scene(id, options) {
         classCallCheck(this, Scene);
@@ -969,7 +1207,9 @@ var Scene = function () {
                                     var x = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
                                     var y = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
-                                    return [isPercentage(x) ? calcPercentage(x, width) : x * (width / originalWidth), isPercentage(y) ? calcPercentage(y, height) : y * (height / originalHeight)];
+                                    return [isPercentage(x) ? calcPercentage(x, width) : x * (width / originalWidth), isPercentage(y) ? calcPercentage(y, height) : y * (height / originalHeight)].map(function (num) {
+                                        return Math.round(num);
+                                    });
                                 });
 
                             case 9:
@@ -1021,21 +1261,27 @@ var Scene = function () {
                                 elements = this._elements.sort(function (first, next) {
                                     return first.zIndex - next.zIndex;
                                 });
-                                _context2.next = 4;
+
+                                console.log(elements);
+                                _context2.next = 5;
                                 return this._adaptationSize();
 
-                            case 4:
+                            case 5:
                                 adaptationSize = _context2.sent;
 
                                 drawCanvas = function drawCanvas() {
+                                    var reserve = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
                                     return new Promise(function (resolve) {
-                                        return _this2._ctx.draw(true, resolve);
+                                        return _this2._ctx.draw(reserve, resolve);
                                     });
                                 };
 
-                            case 6:
+                                _context2.next = 9;
+                                return drawCanvas();
+
+                            case 9:
                                 if (!(idx < elements.length)) {
-                                    _context2.next = 20;
+                                    _context2.next = 23;
                                     break;
                                 }
 
@@ -1043,26 +1289,26 @@ var Scene = function () {
                                 _context2.t0 = element.preload;
 
                                 if (!_context2.t0) {
-                                    _context2.next = 12;
+                                    _context2.next = 15;
                                     break;
                                 }
 
-                                _context2.next = 12;
+                                _context2.next = 15;
                                 return element.preload();
 
-                            case 12:
+                            case 15:
                                 this._ctx.save();
                                 element.render(this._ctx, adaptationSize);
-                                _context2.next = 16;
-                                return drawCanvas();
+                                _context2.next = 19;
+                                return drawCanvas(true);
 
-                            case 16:
+                            case 19:
                                 this._ctx.restore();
                                 idx++;
-                                _context2.next = 6;
+                                _context2.next = 9;
                                 break;
 
-                            case 20:
+                            case 23:
                             case 'end':
                                 return _context2.stop();
                         }
@@ -1085,50 +1331,47 @@ var Label = function (_Element) {
 
     function Label(config) {
         classCallCheck(this, Label);
-
-        console.log(config);
-        return possibleConstructorReturn(this, (Label.__proto__ || Object.getPrototypeOf(Label)).call(this, config));
+        return possibleConstructorReturn(this, (Label.__proto__ || Object.getPrototypeOf(Label)).call(this, _extends({
+            left: 0,
+            top: 0,
+            text: '',
+            textAlign: 'left',
+            color: '#000000',
+            fontStyle: 'normal',
+            fontWeigth: 'normal',
+            fontFamily: 'sans-serif'
+        }, config)));
     }
 
     createClass(Label, [{
         key: 'render',
-        value: function render() {
-            console.log('render');
+        value: function render(ctx, adaptation) {
+            var config = this.config;
+
+
+            ctx.font = [config.fontStyle, config.fontWeigth, config.fontSize + 'px', config.fontFamily].filter(function (val) {
+                return val != null;
+            }).join(' ');
+
+            ctx.setFillStyle(config.color);
+            ctx.setTextBaseline('top');
+            ctx.setTextAlign(config.textAlign);
+            ctx.fillText.apply(ctx, [config.text].concat(toConsumableArray(adaptation(config.left, config.top)), [adaptation(config.maxWidth, 0)[0]]));
         }
     }]);
     return Label;
 }(Element);
 
-var Share = function (_Element) {
-    inherits(Share, _Element);
-
-    function Share(config) {
-        classCallCheck(this, Share);
-
-        console.log(config);
-        return possibleConstructorReturn(this, (Share.__proto__ || Object.getPrototypeOf(Share)).call(this, config));
-    }
-
-    createClass(Share, [{
-        key: 'render',
-        value: function render(config) {
-            console.log(config);
-        }
-    }, {
-        key: 'preload',
-        value: function preload(config) {
-            console.log('preconfig');
-        }
-    }]);
-    return Share;
-}(Element);
-
 var Background = function (_Element) {
     inherits(Background, _Element);
 
-    function Background() {
+    function Background(config) {
         classCallCheck(this, Background);
-        return possibleConstructorReturn(this, (Background.__proto__ || Object.getPrototypeOf(Background)).apply(this, arguments));
+
+        var _this = possibleConstructorReturn(this, (Background.__proto__ || Object.getPrototypeOf(Background)).call(this, config));
+
+        _this._bgImage = null;
+        return _this;
     }
 
     createClass(Background, [{
@@ -1190,6 +1433,5 @@ var Background = function (_Element) {
 exports.Scene = Scene;
 exports.Element = Element;
 exports.Label = Label;
-exports.Share = Share;
 exports.Background = Background;
 exports.utils = utils;

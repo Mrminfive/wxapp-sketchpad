@@ -11,6 +11,18 @@ import Element from './element.js';
 import { downloadFile } from './utils.js';
 
 export default class Background extends Element {
+    /**
+     * 场景背景节点
+     *
+     * @param {Object} config 节点配置
+     * @param {String} config.color 16进制颜色，用于设置背景颜色
+     * @param {String} config.image 背景图片，支持
+     */
+    constructor(config) {
+        super(config);
+        this._bgImage = null;
+    }
+
     render(ctx, adaptation) {
         let { color, image } = this.config;
 

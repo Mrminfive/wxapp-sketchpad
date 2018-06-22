@@ -80,7 +80,7 @@ class Scene {
             return [
                 isPercentage(x) ? calcPercentage(x, width) : x * (width / originalWidth),
                 isPercentage(y) ? calcPercentage(y, height) : y * (height / originalHeight)
-            ];
+            ].map(num => Math.round(num));
         };
     }
 
@@ -124,15 +124,19 @@ class Scene {
     async draw() {
         let idx = 0;
         const elements = this._elements.sort((first, next) => first.zIndex - next.zIndex);
+        console.log(elements);
         const adaptationSize = await this._adaptationSize();
-        const drawCanvas = () => new Promise(resolve => this._ctx.draw(true, resolve));
+        const drawCanvas = (reserve = false) => new Promise(resolve => this._ctx.draw(reserve, resolve));
+
+        // 擦除面板
+        await drawCanvas();
 
         while (idx < elements.length) {
             let element = elements[idx];
             element.preload && await element.preload();
             this._ctx.save();
             element.render(this._ctx, adaptationSize);
-            await drawCanvas();
+            await drawCanvas(true);
             this._ctx.restore();
             idx++;
         }

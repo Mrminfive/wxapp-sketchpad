@@ -124,7 +124,6 @@ class Scene {
     async draw() {
         let idx = 0;
         const elements = this._elements.sort((first, next) => first.zIndex - next.zIndex);
-        console.log(elements);
         const adaptationSize = await this._adaptationSize();
         const drawCanvas = (reserve = false) => new Promise(resolve => this._ctx.draw(reserve, resolve));
 

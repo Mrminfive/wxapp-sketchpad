@@ -64,8 +64,6 @@ export default class Element {
     // 处理节点内容
     _processText(text, maxWidth) {
         let { config, _ctx, _adaptation } = this;
-        const len = text.length;
-        let idx = len;
 
         // 全局字体，用于检查字体宽度
         _ctx.font = [
@@ -75,16 +73,31 @@ export default class Element {
             config.fontFamily
         ].filter(val => val != null).join(' ');
 
-        while (idx >= 1) {
-            let beforeStr = text.substring(0, idx);
+        function calc(str) {
+            let len = str.length;
+            let idx = 0;
+            let result = [];
 
-            let strWidth = _ctx.measureText(beforeStr).width;
-            if (strWidth <= maxWidth) {
-                return idx === len ? [{ text: beforeStr, width: strWidth }] : [{ text: beforeStr, width: strWidth }].concat(this._processText(text.substring(idx), maxWidth));
-            } else {
-                idx--;
+            while (idx < len) {
+                let nowStr = str.substring(0, idx + 1);
+                let strWidth = _ctx.measureText(nowStr).width;
+
+                if (strWidth <= maxWidth) {
+                    result[0] = {
+                        text: nowStr,
+                        width: strWidth
+                    };
+                } else {
+                    break;
+                }
+
+                idx++;
             }
+
+            return idx === len ? result : result.concat(calc(str.substring(idx)));
         }
+
+        return calc(text);
     }
 
     // 处理边框

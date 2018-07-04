@@ -7,6 +7,10 @@
  * @lastDate: 2018-06-18
  */
 
+import Downloader from './download.js';
+
+let downloader = new Downloader();
+
 /**
  * 异常信息提示
  *
@@ -102,24 +106,26 @@ function promisifyList(methods = []) {
  * @return {Promise}
  */
 async function downloadFile(url) {
-    if (checkIsWxFliePath(url)) {
-        return url;
-    } else if (checkIsNetworkFile(url)) {
-        let {
-            tempFilePath,
-            statusCode
-        } = await promisify('downloadFile')({
-            url
-        });
+    const filePath = await downloader.download(url);
+    return filePath;
+    // if (checkIsWxFliePath(url)) {
+    //     return url;
+    // } else if (checkIsNetworkFile(url)) {
+    //     let {
+    //         tempFilePath,
+    //         statusCode
+    //     } = await promisify('downloadFile')({
+    //         url
+    //     });
 
-        if (statusCode !== 200 && statusCode !== 304) {
-            errorInfo('download file error, status code is ' + statusCode);
-        }
+    //     if (statusCode !== 200 && statusCode !== 304) {
+    //         errorInfo('download file error, status code is ' + statusCode);
+    //     }
 
-        return tempFilePath;
-    } else {
-        errorInfo('The file url must be a network file or a wechat file');
-    }
+    //     return tempFilePath;
+    // } else {
+    //     errorInfo('The file url must be a network file or a wechat file');
+    // }
 }
 
 /**

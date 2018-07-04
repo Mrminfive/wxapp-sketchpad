@@ -730,48 +730,259 @@ if (hadRuntime) {
 
 var regenerator = runtimeModule;
 
+var SAVED_FILES_KEY = 'savedFiles';
+var KEY_TOTAL_SIZE = 'totalSize';
+var KEY_PATH = 'path';
+var KEY_TIME = 'time';
+var KEY_SIZE = 'size';
+
+var MAX_SPACE_IN_B = 6 * 1024 * 1024;
+var savedFiles = {};
+
+var Dowloader = function () {
+    function Dowloader() {
+        classCallCheck(this, Dowloader);
+
+        wx.getStorage({
+            key: SAVED_FILES_KEY,
+            success: function success(res) {
+                if (res.data) {
+                    savedFiles = res.data;
+                }
+            }
+        });
+    }
+
+    createClass(Dowloader, [{
+        key: 'download',
+        value: function download(url) {
+            return new Promise(function (resolve, reject) {
+                if (!(url && url.startsWith('http'))) {
+                    resolve(url);
+                    return;
+                }
+                var file = getFile(url);
+                if (file) {
+                    resolve(file[KEY_PATH]);
+                    return;
+                }
+                wx.downloadFile({
+                    url: url,
+                    success: function success(res) {
+                        if (res.statusCode !== 200) {
+                            console.error('downloadFile ' + url + ' failed res.statusCode is not 200');
+                            reject();
+                            return;
+                        }
+                        var tempFilePath = res.tempFilePath;
+
+                        wx.getFileInfo({
+                            filePath: tempFilePath,
+                            success: function success(tmpRes) {
+                                var newFileSize = tmpRes.size;
+                                doLru(newFileSize).then(function () {
+                                    saveFile(url, newFileSize, tempFilePath).then(function (filePath) {
+                                        resolve(filePath);
+                                    });
+                                }, function () {
+                                    resolve(tempFilePath);
+                                });
+                            },
+                            fail: function fail(error) {
+                                console.error('getFileInfo ' + res.tempFilePath + ' failed, ' + JSON.stringify(error));
+                                resolve(res.tempFilePath);
+                            }
+                        });
+                    },
+                    fail: function fail(error) {
+                        console.error('downloadFile failed, ' + JSON.stringify(error) + ' ');
+                        reject();
+                    }
+                });
+            });
+        }
+    }]);
+    return Dowloader;
+}();
+
+
+function saveFile(key, newFileSize, tempFilePath) {
+    return new Promise(function (resolve, reject) {
+        wx.saveFile({
+            tempFilePath: tempFilePath,
+            success: function success(fileRes) {
+                var totalSize = savedFiles[KEY_TOTAL_SIZE] ? savedFiles[KEY_TOTAL_SIZE] : 0;
+                savedFiles[key] = {};
+                savedFiles[key][KEY_PATH] = fileRes.savedFilePath;
+                savedFiles[key][KEY_TIME] = new Date().getTime();
+                savedFiles[key][KEY_SIZE] = newFileSize;
+                savedFiles['totalSize'] = newFileSize + totalSize;
+                wx.setStorage({
+                    key: SAVED_FILES_KEY,
+                    data: savedFiles
+                });
+                resolve(fileRes.savedFilePath);
+            },
+            fail: function fail(error) {
+                console.error('saveFile ' + key + ' failed, then we delete all files, ' + JSON.stringify(error));
+
+                resolve(tempFilePath);
+
+                reset();
+            }
+        });
+    });
+}
+
+function reset() {
+    wx.removeStorage({
+        key: SAVED_FILES_KEY,
+        success: function success() {
+            wx.getSavedFileList({
+                success: function success(listRes) {
+                    removeFiles(listRes.fileList);
+                },
+                fail: function fail(getError) {
+                    console.error('getSavedFileList failed, ' + JSON.stringify(getError));
+                }
+            });
+        }
+    });
+}
+
+function doLru(size) {
+    return new Promise(function (resolve, reject) {
+        var totalSize = savedFiles[KEY_TOTAL_SIZE] ? savedFiles[KEY_TOTAL_SIZE] : 0;
+
+        if (size + totalSize <= MAX_SPACE_IN_B) {
+            resolve();
+            return;
+        }
+
+        var pathsShouldDelete = [];
+
+        var allFiles = JSON.parse(JSON.stringify(savedFiles));
+        delete allFiles[KEY_TOTAL_SIZE];
+        var sortedKeys = Object.keys(allFiles).sort(function (a, b) {
+            return allFiles[a][KEY_TIME] - allFiles[b][KEY_TIME];
+        });
+
+        var _iteratorNormalCompletion = true;
+        var _didIteratorError = false;
+        var _iteratorError = undefined;
+
+        try {
+            for (var _iterator = sortedKeys[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                var sortedKey = _step.value;
+
+                totalSize -= savedFiles[sortedKey].size;
+                pathsShouldDelete.push(savedFiles[sortedKey][KEY_PATH]);
+                delete savedFiles[sortedKey];
+                if (totalSize + size < MAX_SPACE_IN_B) {
+                    break;
+                }
+            }
+        } catch (err) {
+            _didIteratorError = true;
+            _iteratorError = err;
+        } finally {
+            try {
+                if (!_iteratorNormalCompletion && _iterator.return) {
+                    _iterator.return();
+                }
+            } finally {
+                if (_didIteratorError) {
+                    throw _iteratorError;
+                }
+            }
+        }
+
+        savedFiles['totalSize'] = totalSize;
+
+        wx.setStorage({
+            key: SAVED_FILES_KEY,
+            data: savedFiles,
+            success: function success() {
+                if (pathsShouldDelete.length > 0) {
+                    removeFiles(pathsShouldDelete);
+                }
+                resolve();
+            },
+            fail: function fail(error) {
+                console.error('doLru setStorage failed, ' + JSON.stringify(error));
+                reject();
+            }
+        });
+    });
+}
+
+function removeFiles(pathsShouldDelete) {
+    var _loop = function _loop(pathDel) {
+        var delPath = pathDel;
+        if ((typeof pathDel === 'undefined' ? 'undefined' : _typeof(pathDel)) === 'object') {
+            delPath = pathDel.filePath;
+        }
+        wx.removeSavedFile({
+            filePath: delPath,
+            fail: function fail(error) {
+                console.error('removeSavedFile ' + pathDel + ' failed, ' + JSON.stringify(error));
+            }
+        });
+    };
+
+    var _iteratorNormalCompletion2 = true;
+    var _didIteratorError2 = false;
+    var _iteratorError2 = undefined;
+
+    try {
+        for (var _iterator2 = pathsShouldDelete[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+            var pathDel = _step2.value;
+
+            _loop(pathDel);
+        }
+    } catch (err) {
+        _didIteratorError2 = true;
+        _iteratorError2 = err;
+    } finally {
+        try {
+            if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                _iterator2.return();
+            }
+        } finally {
+            if (_didIteratorError2) {
+                throw _iteratorError2;
+            }
+        }
+    }
+}
+
+function getFile(key) {
+    if (!savedFiles[key]) {
+        return;
+    }
+    savedFiles[key]['time'] = new Date().getTime();
+    wx.setStorage({
+        key: SAVED_FILES_KEY,
+        data: savedFiles
+    });
+    return savedFiles[key];
+}
+
 var downloadFile = function () {
     var _ref = asyncToGenerator(regenerator.mark(function _callee(url) {
-        var _ref2, tempFilePath, statusCode;
-
+        var filePath;
         return regenerator.wrap(function _callee$(_context) {
             while (1) {
                 switch (_context.prev = _context.next) {
                     case 0:
-                        if (!checkIsWxFliePath(url)) {
-                            _context.next = 4;
-                            break;
-                        }
+                        _context.next = 2;
+                        return downloader.download(url);
 
-                        return _context.abrupt('return', url);
+                    case 2:
+                        filePath = _context.sent;
+                        return _context.abrupt('return', filePath);
 
                     case 4:
-                        if (!checkIsNetworkFile(url)) {
-                            _context.next = 14;
-                            break;
-                        }
-
-                        _context.next = 7;
-                        return promisify('downloadFile')({
-                            url: url
-                        });
-
-                    case 7:
-                        _ref2 = _context.sent;
-                        tempFilePath = _ref2.tempFilePath;
-                        statusCode = _ref2.statusCode;
-
-
-                        if (statusCode !== 200 && statusCode !== 304) {
-                            errorInfo('download file error, status code is ' + statusCode);
-                        }
-
-                        return _context.abrupt('return', tempFilePath);
-
-                    case 14:
-                        errorInfo('The file url must be a network file or a wechat file');
-
-                    case 15:
                     case 'end':
                         return _context.stop();
                 }
@@ -785,7 +996,7 @@ var downloadFile = function () {
 }();
 
 var saveImageToPhotosAlbum = function () {
-    var _ref3 = asyncToGenerator(regenerator.mark(function _callee2(filePath) {
+    var _ref2 = asyncToGenerator(regenerator.mark(function _callee2(filePath) {
         var url;
         return regenerator.wrap(function _callee2$(_context2) {
             while (1) {
@@ -813,9 +1024,11 @@ var saveImageToPhotosAlbum = function () {
     }));
 
     return function saveImageToPhotosAlbum(_x4) {
-        return _ref3.apply(this, arguments);
+        return _ref2.apply(this, arguments);
     };
 }();
+
+var downloader = new Dowloader();
 
 function errorInfo(info) {
     var message = '[wxapp-sketchpad] Error: ' + info;
@@ -921,23 +1134,35 @@ var Element = function () {
                 _ctx = this._ctx,
                 _adaptation = this._adaptation;
 
-            var len = text.length;
-            var idx = len;
-
             _ctx.font = [config.fontStyle, config.fontWeigth, _adaptation(0, parseFloat(config.fontSize))[1] + 'px', config.fontFamily].filter(function (val) {
                 return val != null;
             }).join(' ');
 
-            while (idx >= 1) {
-                var beforeStr = text.substring(0, idx);
+            function calc(str) {
+                var len = str.length;
+                var idx = 0;
+                var result = [];
 
-                var strWidth = _ctx.measureText(beforeStr).width;
-                if (strWidth <= maxWidth) {
-                    return idx === len ? [{ text: beforeStr, width: strWidth }] : [{ text: beforeStr, width: strWidth }].concat(this._processText(text.substring(idx), maxWidth));
-                } else {
-                    idx--;
+                while (idx < len) {
+                    var nowStr = str.substring(0, idx + 1);
+                    var strWidth = _ctx.measureText(nowStr).width;
+
+                    if (strWidth <= maxWidth) {
+                        result[0] = {
+                            text: nowStr,
+                            width: strWidth
+                        };
+                    } else {
+                        break;
+                    }
+
+                    idx++;
                 }
+
+                return idx === len ? result : result.concat(calc(str.substring(idx)));
             }
+
+            return calc(text);
         }
     }, {
         key: '_processBorder',
@@ -1261,12 +1486,10 @@ var Scene = function () {
                                 elements = this._elements.sort(function (first, next) {
                                     return first.zIndex - next.zIndex;
                                 });
-
-                                console.log(elements);
-                                _context2.next = 5;
+                                _context2.next = 4;
                                 return this._adaptationSize();
 
-                            case 5:
+                            case 4:
                                 adaptationSize = _context2.sent;
 
                                 drawCanvas = function drawCanvas() {
@@ -1276,12 +1499,12 @@ var Scene = function () {
                                     });
                                 };
 
-                                _context2.next = 9;
+                                _context2.next = 8;
                                 return drawCanvas();
 
-                            case 9:
+                            case 8:
                                 if (!(idx < elements.length)) {
-                                    _context2.next = 23;
+                                    _context2.next = 22;
                                     break;
                                 }
 
@@ -1289,26 +1512,26 @@ var Scene = function () {
                                 _context2.t0 = element.preload;
 
                                 if (!_context2.t0) {
-                                    _context2.next = 15;
+                                    _context2.next = 14;
                                     break;
                                 }
 
-                                _context2.next = 15;
+                                _context2.next = 14;
                                 return element.preload();
 
-                            case 15:
+                            case 14:
                                 this._ctx.save();
                                 element.render(this._ctx, adaptationSize);
-                                _context2.next = 19;
+                                _context2.next = 18;
                                 return drawCanvas(true);
 
-                            case 19:
+                            case 18:
                                 this._ctx.restore();
                                 idx++;
-                                _context2.next = 9;
+                                _context2.next = 8;
                                 break;
 
-                            case 23:
+                            case 22:
                             case 'end':
                                 return _context2.stop();
                         }

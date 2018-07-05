@@ -1139,30 +1139,38 @@ var Element = function () {
             }).join(' ');
 
             function calc(str) {
-                var len = str.length;
-                var idx = 0;
-                var result = [];
+                var width = _ctx.measureText(str).width;
 
-                while (idx < len) {
-                    var nowStr = str.substring(0, idx + 1);
-                    var strWidth = _ctx.measureText(nowStr).width;
+                if (width > maxWidth) {
+                    var len = str.length;
+                    var idx = 0;
+                    var result = [];
 
-                    if (strWidth <= maxWidth) {
-                        result[0] = {
-                            text: nowStr,
-                            width: strWidth
-                        };
-                    } else {
-                        break;
+                    while (idx < len) {
+                        var nowStr = str.substring(0, idx + 1);
+                        var strWidth = _ctx.measureText(nowStr).width;
+
+                        if (strWidth <= maxWidth) {
+                            result[0] = {
+                                text: nowStr,
+                                width: strWidth
+                            };
+                        } else {
+                            break;
+                        }
+
+                        idx++;
                     }
 
-                    idx++;
+                    return idx === len ? result : result.concat(calc(str.substring(idx)));
+                } else {
+                    return [{ text: str, width: width }];
                 }
-
-                return idx === len ? result : result.concat(calc(str.substring(idx)));
             }
 
-            return calc(text);
+            var contents = calc(text);
+            console.log(contents);
+            return contents;
         }
     }, {
         key: '_processBorder',
@@ -1234,6 +1242,9 @@ var Element = function () {
                 padding = _adaptationConfig.padding,
                 containerWidth = _adaptationConfig.containerWidth,
                 containerHeight = _adaptationConfig.containerHeight;
+
+
+            _ctx.save();
 
             _ctx.beginPath();
             _ctx.rect(position[0] + border.width + padding[3], position[1] + border.width + padding[0], containerWidth, containerHeight);
@@ -1328,6 +1339,8 @@ var Element = function () {
             this._drawBackground();
             this._drawContainer();
             this._drawContent();
+
+            ctx.restore();
         }
     }, {
         key: 'preload',
@@ -1484,7 +1497,7 @@ var Scene = function () {
                             case 0:
                                 idx = 0;
                                 elements = this._elements.sort(function (first, next) {
-                                    return first.zIndex - next.zIndex;
+                                    return first.config.zIndex - next.config.zIndex;
                                 });
                                 _context2.next = 4;
                                 return this._adaptationSize();
@@ -1522,11 +1535,11 @@ var Scene = function () {
                             case 14:
                                 this._ctx.save();
                                 element.render(this._ctx, adaptationSize);
-                                _context2.next = 18;
+                                this._ctx.restore();
+                                _context2.next = 19;
                                 return drawCanvas(true);
 
-                            case 18:
-                                this._ctx.restore();
+                            case 19:
                                 idx++;
                                 _context2.next = 8;
                                 break;

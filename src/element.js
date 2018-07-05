@@ -74,30 +74,38 @@ export default class Element {
         ].filter(val => val != null).join(' ');
 
         function calc(str) {
-            let len = str.length;
-            let idx = 0;
-            let result = [];
+            let width = _ctx.measureText(str).width;
 
-            while (idx < len) {
-                let nowStr = str.substring(0, idx + 1);
-                let strWidth = _ctx.measureText(nowStr).width;
+            if (width > maxWidth) {
+                let len = str.length;
+                let idx = 0;
+                let result = [];
 
-                if (strWidth <= maxWidth) {
-                    result[0] = {
-                        text: nowStr,
-                        width: strWidth
-                    };
-                } else {
-                    break;
+                while (idx < len) {
+                    let nowStr = str.substring(0, idx + 1);
+                    let strWidth = _ctx.measureText(nowStr).width;
+
+                    if (strWidth <= maxWidth) {
+                        result[0] = {
+                            text: nowStr,
+                            width: strWidth
+                        };
+                    } else {
+                        break;
+                    }
+
+                    idx++;
                 }
 
-                idx++;
+                return idx === len ? result : result.concat(calc(str.substring(idx)));
+            } else {
+                return [{ text: str, width }];
             }
-
-            return idx === len ? result : result.concat(calc(str.substring(idx)));
         }
 
-        return calc(text);
+        let contents = calc(text);
+        console.log(contents);
+        return contents;
     }
 
     // 处理边框
@@ -172,6 +180,7 @@ export default class Element {
         let { _ctx, _adaptationConfig } = this;
         const { position, border, padding, containerWidth, containerHeight } = _adaptationConfig;
 
+        _ctx.save();
         // 界定内容区域
         _ctx.beginPath();
         _ctx.rect(
@@ -276,6 +285,8 @@ export default class Element {
         this._drawBackground();
         this._drawContainer();
         this._drawContent();
+
+        ctx.restore();
     }
 
     /**

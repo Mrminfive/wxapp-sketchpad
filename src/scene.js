@@ -123,7 +123,7 @@ class Scene {
      */
     async draw() {
         let idx = 0;
-        const elements = this._elements.sort((first, next) => first.zIndex - next.zIndex);
+        const elements = this._elements.sort((first, next) => first.config.zIndex - next.config.zIndex);
         const adaptationSize = await this._adaptationSize();
         const drawCanvas = (reserve = false) => new Promise(resolve => this._ctx.draw(reserve, resolve));
 
@@ -135,8 +135,8 @@ class Scene {
             element.preload && await element.preload();
             this._ctx.save();
             element.render(this._ctx, adaptationSize);
-            await drawCanvas(true);
             this._ctx.restore();
+            await drawCanvas(true);
             idx++;
         }
     }

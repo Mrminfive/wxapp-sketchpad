@@ -245,7 +245,7 @@ export default class Element {
 
         _ctx.font = [
             config.fontStyle,
-            config.fontWeigth,
+            config.fontWeight,
             fontSize + 'px',
             config.fontFamily
         ].filter(val => val != null).join(' ');

@@ -135,8 +135,9 @@ class Scene {
             element.preload && await element.preload();
             this._ctx.save();
             element.render(this._ctx, adaptationSize);
-            this._ctx.restore();
             await drawCanvas(true);
+            await new Promise(res => setTimeout(res, 50));
+            this._ctx.restore();
             idx++;
         }
     }

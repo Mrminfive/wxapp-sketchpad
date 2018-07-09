@@ -68,6 +68,7 @@ export default class Element {
         // 全局字体，用于检查字体宽度
         _ctx.font = [
             config.fontStyle,
+            'normal',
             config.fontWeigth,
             _adaptation(0, parseFloat(config.fontSize))[1] + 'px',
             config.fontFamily
@@ -103,9 +104,7 @@ export default class Element {
             }
         }
 
-        let contents = calc(text);
-        console.log(contents);
-        return contents;
+        return calc(text);
     }
 
     // 处理边框
@@ -180,7 +179,6 @@ export default class Element {
         let { _ctx, _adaptationConfig } = this;
         const { position, border, padding, containerWidth, containerHeight } = _adaptationConfig;
 
-        _ctx.save();
         // 界定内容区域
         _ctx.beginPath();
         _ctx.rect(
@@ -243,13 +241,15 @@ export default class Element {
             'right': 1
         };
 
+        _ctx.setFillStyle(config.color);
+        _ctx.font = '10px sans-serif';
         _ctx.font = [
             config.fontStyle,
+            'normal',
             config.fontWeight,
             fontSize + 'px',
             config.fontFamily
         ].filter(val => val != null).join(' ');
-        _ctx.setFillStyle(config.color);
         // _ctx.setTextAlign(config.textAlign);
         _ctx.setTextBaseline('middle');
 
@@ -285,8 +285,6 @@ export default class Element {
         this._drawBackground();
         this._drawContainer();
         this._drawContent();
-
-        ctx.restore();
     }
 
     /**

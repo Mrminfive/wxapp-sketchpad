@@ -1134,7 +1134,7 @@ var Element = function () {
                 _ctx = this._ctx,
                 _adaptation = this._adaptation;
 
-            _ctx.font = [config.fontStyle, config.fontWeigth, _adaptation(0, parseFloat(config.fontSize))[1] + 'px', config.fontFamily].filter(function (val) {
+            _ctx.font = [config.fontStyle, 'normal', config.fontWeigth, _adaptation(0, parseFloat(config.fontSize))[1] + 'px', config.fontFamily].filter(function (val) {
                 return val != null;
             }).join(' ');
 
@@ -1168,9 +1168,7 @@ var Element = function () {
                 }
             }
 
-            var contents = calc(text);
-            console.log(contents);
-            return contents;
+            return calc(text);
         }
     }, {
         key: '_processBorder',
@@ -1243,9 +1241,6 @@ var Element = function () {
                 containerWidth = _adaptationConfig.containerWidth,
                 containerHeight = _adaptationConfig.containerHeight;
 
-
-            _ctx.save();
-
             _ctx.beginPath();
             _ctx.rect(position[0] + border.width + padding[3], position[1] + border.width + padding[0], containerWidth, containerHeight);
             _ctx.clip();
@@ -1317,10 +1312,11 @@ var Element = function () {
                 'right': 1
             };
 
-            _ctx.font = [config.fontStyle, config.fontWeigth, fontSize + 'px', config.fontFamily].filter(function (val) {
+            _ctx.setFillStyle(config.color);
+            _ctx.font = '10px sans-serif';
+            _ctx.font = [config.fontStyle, 'normal', config.fontWeight, fontSize + 'px', config.fontFamily].filter(function (val) {
                 return val != null;
             }).join(' ');
-            _ctx.setFillStyle(config.color);
 
             _ctx.setTextBaseline('middle');
 
@@ -1339,8 +1335,6 @@ var Element = function () {
             this._drawBackground();
             this._drawContainer();
             this._drawContent();
-
-            ctx.restore();
         }
     }, {
         key: 'preload',
@@ -1517,7 +1511,7 @@ var Scene = function () {
 
                             case 8:
                                 if (!(idx < elements.length)) {
-                                    _context2.next = 22;
+                                    _context2.next = 24;
                                     break;
                                 }
 
@@ -1535,16 +1529,22 @@ var Scene = function () {
                             case 14:
                                 this._ctx.save();
                                 element.render(this._ctx, adaptationSize);
-                                this._ctx.restore();
-                                _context2.next = 19;
+                                _context2.next = 18;
                                 return drawCanvas(true);
 
-                            case 19:
+                            case 18:
+                                _context2.next = 20;
+                                return new Promise(function (res) {
+                                    return setTimeout(res, 50);
+                                });
+
+                            case 20:
+                                this._ctx.restore();
                                 idx++;
                                 _context2.next = 8;
                                 break;
 
-                            case 22:
+                            case 24:
                             case 'end':
                                 return _context2.stop();
                         }

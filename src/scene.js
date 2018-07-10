@@ -27,7 +27,7 @@ class Scene {
         this._elements = [];
         this._canvasRect = null;
         this._ctx = wx.createCanvasContext(id, options.context);
-
+        this._systemInfo = wx.getSystemInfoSync();
         this._adaptationSize();
     }
 
@@ -136,7 +136,7 @@ class Scene {
             this._ctx.save();
             element.render(this._ctx, adaptationSize);
             await drawCanvas(true);
-            await new Promise(res => setTimeout(res, 50));
+            ~this._systemInfo.system.indexOf('Android') && await new Promise(res => setTimeout(res, 50));
             this._ctx.restore();
             idx++;
         }

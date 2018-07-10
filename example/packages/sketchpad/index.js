@@ -1385,7 +1385,7 @@ var Scene = function () {
         this._elements = [];
         this._canvasRect = null;
         this._ctx = wx.createCanvasContext(id, options.context);
-
+        this._systemInfo = wx.getSystemInfoSync();
         this._adaptationSize();
     }
 
@@ -1511,7 +1511,7 @@ var Scene = function () {
 
                             case 8:
                                 if (!(idx < elements.length)) {
-                                    _context2.next = 24;
+                                    _context2.next = 26;
                                     break;
                                 }
 
@@ -1533,18 +1533,25 @@ var Scene = function () {
                                 return drawCanvas(true);
 
                             case 18:
-                                _context2.next = 20;
+                                _context2.t1 = ~this._systemInfo.system.indexOf('Android');
+
+                                if (!_context2.t1) {
+                                    _context2.next = 22;
+                                    break;
+                                }
+
+                                _context2.next = 22;
                                 return new Promise(function (res) {
                                     return setTimeout(res, 50);
                                 });
 
-                            case 20:
+                            case 22:
                                 this._ctx.restore();
                                 idx++;
                                 _context2.next = 8;
                                 break;
 
-                            case 24:
+                            case 26:
                             case 'end':
                                 return _context2.stop();
                         }

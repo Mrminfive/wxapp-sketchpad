@@ -63,10 +63,11 @@ export default class Element {
 
     // 处理节点内容
     _processText(text, maxWidth) {
-        let { config, _ctx, _adaptation } = this;
+        let { config, _aidctx, _adaptation } = this;
 
+        _aidctx.save();
         // 全局字体，用于检查字体宽度
-        _ctx.font = [
+        _aidctx.font = [
             config.fontStyle,
             'normal',
             config.fontWeigth,
@@ -75,7 +76,7 @@ export default class Element {
         ].filter(val => val != null).join(' ');
 
         function calc(str) {
-            let width = _ctx.measureText(str).width;
+            let width = _aidctx.measureText(str).width;
 
             if (width > maxWidth) {
                 let len = str.length;
@@ -84,7 +85,7 @@ export default class Element {
 
                 while (idx < len) {
                     let nowStr = str.substring(0, idx + 1);
-                    let strWidth = _ctx.measureText(nowStr).width;
+                    let strWidth = _aidctx.measureText(nowStr).width;
 
                     if (strWidth <= maxWidth) {
                         result[0] = {
@@ -104,7 +105,9 @@ export default class Element {
             }
         }
 
-        return calc(text);
+        let res = calc(text);
+        _aidctx.restore();
+        return res;
     }
 
     // 处理边框
@@ -179,7 +182,6 @@ export default class Element {
         let { _ctx, _adaptationConfig } = this;
         const { position, border, padding, containerWidth, containerHeight } = _adaptationConfig;
 
-        _ctx.save();
         // 界定内容区域
         _ctx.beginPath();
         _ctx.rect(
@@ -214,24 +216,26 @@ export default class Element {
         let { width, height } = _adaptationConfig.rect;
         let { border } = _adaptationConfig;
 
-        _ctx.save();
         if (config.backgroundColor && config.backgroundColor !== COLOR_TRANSPRENT) {
+            _ctx.save();
             _ctx.setFillStyle(config.backgroundColor);
             _ctx.fillRect(
                 ..._adaptationConfig.position.map(num => num + border.width),
                 width - (border.width * 2),
                 height - (border.width * 2)
             );
+            _ctx.restore();
         }
         if (config.backgroundImage) {
+            _ctx.save();
             _ctx.drawImage(
                 this._bgImage,
                 ..._adaptationConfig.position.map(num => num + border.width),
                 width - (border.width * 2),
                 height - (border.width * 2)
             );
+            _ctx.restore();
         }
-        _ctx.restore();
     }
 
     _drawContent() {
@@ -246,19 +250,18 @@ export default class Element {
             'right': 1
         };
 
-        _ctx.setFillStyle(config.color);
-        _ctx.font = '10px sans-serif';
-        _ctx.font = [
-            config.fontStyle,
-            'normal',
-            config.fontWeight,
-            fontSize + 'px',
-            config.fontFamily
-        ].filter(val => val != null).join(' ');
-        // _ctx.setTextAlign(config.textAlign);
-        _ctx.setTextBaseline('middle');
-
         content.forEach((item, idx) => {
+            _ctx.save();
+            _ctx.font = [
+                config.fontStyle,
+                'normal',
+                config.fontWeight,
+                fontSize + 'px',
+                config.fontFamily
+            ].filter(val => val != null).join(' ');
+            _ctx.setFillStyle(config.color);
+            // _ctx.setTextAlign(config.textAlign);
+            _ctx.setTextBaseline('middle');
             _ctx.fillText(
                 item.text,
                 position[0] + border.width + padding[3] +
@@ -270,8 +273,8 @@ export default class Element {
                     alignMap[config.textVerticalAlign] * (containerHeight - content.length * lineHeight),
                 containerWidth
             );
+            _ctx.restore();
         });
-        _ctx.restore();
     }
 
     /**
@@ -282,14 +285,15 @@ export default class Element {
      * @param {Function} adaptation 尺寸适配器
      * @api public
      */
-    render(ctx, adaptation) {
+    render(ctx, aidctx, adaptation) {
         this._ctx = ctx;
+        this._aidctx = aidctx;
         this._adaptation = adaptation;
 
         this._adaptationSetting();
         this._drawBorder();
         this._drawBackground();
-        this._drawContainer();
+        // this._drawContainer();
         this._drawContent();
     }
 

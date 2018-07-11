@@ -109,14 +109,14 @@ async function downloadFile(url) {
     const filePath = await downloader.download(url);
     // const { path } = await promisify('getImageInfo')({ src: filePath });
     return filePath;
-    // if (checkIsWxFliePath(filePath)) {
-    //     return filePath;
-    // } else if (checkIsNetworkFile(filePath)) {
+    // if (checkIsWxFliePath(url)) {
+    //     return url;
+    // } else if (checkIsNetworkFile(url)) {
     //     let {
     //         tempFilePath,
     //         statusCode
     //     } = await promisify('downloadFile')({
-    //         url: filePath
+    //         url: url
     //     });
 
     //     if (statusCode !== 200 && statusCode !== 304) {

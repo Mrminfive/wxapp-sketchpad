@@ -27,6 +27,7 @@ class Scene {
         this._elements = [];
         this._canvasRect = null;
         this._ctx = wx.createCanvasContext(id, options.context);
+        this._aidctx = wx.createCanvasContext(options.aidid, options.context);
         this._systemInfo = wx.getSystemInfoSync();
         this._adaptationSize();
     }
@@ -128,20 +129,17 @@ class Scene {
         const drawCanvas = (reserve = false) => new Promise(resolve => this._ctx.draw(reserve, resolve));
 
         // 擦除面板
-        await drawCanvas();
-        // this._ctx.clearRect(0, 0, this._canvasRect.width, this._canvasRect.height);
+        // await drawCanvas();
+        this._ctx.clearRect(0, 0, this._canvasRect.width, this._canvasRect.height);
 
         while (idx < elements.length) {
             let element = elements[idx];
             element.preload && await element.preload();
-            this._ctx.save();
-            element.render(this._ctx, adaptationSize);
-            ~this._systemInfo.system.indexOf('Android') && await new Promise(res => setTimeout(res, 50));
-            this._ctx.restore();
+            element.render(this._ctx, this._aidctx, adaptationSize);
             await drawCanvas(true);
+            ~this._systemInfo.system.indexOf('Android') && await new Promise(res => setTimeout(res, 100));
             idx++;
         }
-
     }
 }
 

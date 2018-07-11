@@ -1136,15 +1136,18 @@ var Element = function () {
         key: '_processText',
         value: function _processText(text, maxWidth) {
             var config = this.config,
-                _ctx = this._ctx,
+                _aidctx = this._aidctx,
                 _adaptation = this._adaptation;
 
-            _ctx.font = [config.fontStyle, 'normal', config.fontWeigth, _adaptation(0, parseFloat(config.fontSize))[1] + 'px', config.fontFamily].filter(function (val) {
+
+            _aidctx.save();
+
+            _aidctx.font = [config.fontStyle, 'normal', config.fontWeigth, _adaptation(0, parseFloat(config.fontSize))[1] + 'px', config.fontFamily].filter(function (val) {
                 return val != null;
             }).join(' ');
 
             function calc(str) {
-                var width = _ctx.measureText(str).width;
+                var width = _aidctx.measureText(str).width;
 
                 if (width > maxWidth) {
                     var len = str.length;
@@ -1153,7 +1156,7 @@ var Element = function () {
 
                     while (idx < len) {
                         var nowStr = str.substring(0, idx + 1);
-                        var strWidth = _ctx.measureText(nowStr).width;
+                        var strWidth = _aidctx.measureText(nowStr).width;
 
                         if (strWidth <= maxWidth) {
                             result[0] = {
@@ -1173,7 +1176,9 @@ var Element = function () {
                 }
             }
 
-            return calc(text);
+            var res = calc(text);
+            _aidctx.restore();
+            return res;
         }
     }, {
         key: '_processBorder',
@@ -1246,9 +1251,6 @@ var Element = function () {
                 containerWidth = _adaptationConfig.containerWidth,
                 containerHeight = _adaptationConfig.containerHeight;
 
-
-            _ctx.save();
-
             _ctx.beginPath();
             _ctx.rect(position[0] + border.width + padding[3], position[1] + border.width + padding[0], containerWidth, containerHeight);
             _ctx.clip();
@@ -1286,19 +1288,21 @@ var Element = function () {
             var border = _adaptationConfig.border;
 
 
-            _ctx.save();
             if (config.backgroundColor && config.backgroundColor !== COLOR_TRANSPRENT) {
+                _ctx.save();
                 _ctx.setFillStyle(config.backgroundColor);
                 _ctx.fillRect.apply(_ctx, toConsumableArray(_adaptationConfig.position.map(function (num) {
                     return num + border.width;
                 })).concat([width - border.width * 2, height - border.width * 2]));
+                _ctx.restore();
             }
             if (config.backgroundImage) {
+                _ctx.save();
                 _ctx.drawImage.apply(_ctx, [this._bgImage].concat(toConsumableArray(_adaptationConfig.position.map(function (num) {
                     return num + border.width;
                 })), [width - border.width * 2, height - border.width * 2]));
+                _ctx.restore();
             }
-            _ctx.restore();
         }
     }, {
         key: '_drawContent',
@@ -1324,29 +1328,29 @@ var Element = function () {
                 'right': 1
             };
 
-            _ctx.setFillStyle(config.color);
-            _ctx.font = '10px sans-serif';
-            _ctx.font = [config.fontStyle, 'normal', config.fontWeight, fontSize + 'px', config.fontFamily].filter(function (val) {
-                return val != null;
-            }).join(' ');
-
-            _ctx.setTextBaseline('middle');
-
             content.forEach(function (item, idx) {
+                _ctx.save();
+                _ctx.font = [config.fontStyle, 'normal', config.fontWeight, fontSize + 'px', config.fontFamily].filter(function (val) {
+                    return val != null;
+                }).join(' ');
+                _ctx.setFillStyle(config.color);
+
+                _ctx.setTextBaseline('middle');
                 _ctx.fillText(item.text, position[0] + border.width + padding[3] + alignMap[config.textAlign] * (containerWidth - item.width), position[1] + border.width + padding[0] + lineHeight * (idx + 0.5) + alignMap[config.textVerticalAlign] * (containerHeight - content.length * lineHeight), containerWidth);
+                _ctx.restore();
             });
-            _ctx.restore();
         }
     }, {
         key: 'render',
-        value: function render(ctx, adaptation) {
+        value: function render(ctx, aidctx, adaptation) {
             this._ctx = ctx;
+            this._aidctx = aidctx;
             this._adaptation = adaptation;
 
             this._adaptationSetting();
             this._drawBorder();
             this._drawBackground();
-            this._drawContainer();
+
             this._drawContent();
         }
     }, {
@@ -1398,6 +1402,7 @@ var Scene = function () {
         this._elements = [];
         this._canvasRect = null;
         this._ctx = wx.createCanvasContext(id, options.context);
+        this._aidctx = wx.createCanvasContext(options.aidid, options.context);
         this._systemInfo = wx.getSystemInfoSync();
         this._adaptationSize();
     }
@@ -1519,12 +1524,11 @@ var Scene = function () {
                                     });
                                 };
 
-                                _context2.next = 8;
-                                return drawCanvas();
+                                this._ctx.clearRect(0, 0, this._canvasRect.width, this._canvasRect.height);
 
-                            case 8:
+                            case 7:
                                 if (!(idx < elements.length)) {
-                                    _context2.next = 26;
+                                    _context2.next = 23;
                                     break;
                                 }
 
@@ -1532,16 +1536,19 @@ var Scene = function () {
                                 _context2.t0 = element.preload;
 
                                 if (!_context2.t0) {
-                                    _context2.next = 14;
+                                    _context2.next = 13;
                                     break;
                                 }
 
-                                _context2.next = 14;
+                                _context2.next = 13;
                                 return element.preload();
 
-                            case 14:
-                                this._ctx.save();
-                                element.render(this._ctx, adaptationSize);
+                            case 13:
+                                element.render(this._ctx, this._aidctx, adaptationSize);
+                                _context2.next = 16;
+                                return drawCanvas(true);
+
+                            case 16:
                                 _context2.t1 = ~this._systemInfo.system.indexOf('Android');
 
                                 if (!_context2.t1) {
@@ -1551,20 +1558,15 @@ var Scene = function () {
 
                                 _context2.next = 20;
                                 return new Promise(function (res) {
-                                    return setTimeout(res, 50);
+                                    return setTimeout(res, 100);
                                 });
 
                             case 20:
-                                this._ctx.restore();
-                                _context2.next = 23;
-                                return drawCanvas(true);
-
-                            case 23:
                                 idx++;
-                                _context2.next = 8;
+                                _context2.next = 7;
                                 break;
 
-                            case 26:
+                            case 23:
                             case 'end':
                                 return _context2.stop();
                         }
@@ -1632,7 +1634,7 @@ var Background = function (_Element) {
 
     createClass(Background, [{
         key: 'render',
-        value: function render(ctx, adaptation) {
+        value: function render(ctx, aidctx, adaptation) {
             var _config = this.config,
                 color = _config.color,
                 image = _config.image;

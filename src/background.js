@@ -23,7 +23,7 @@ export default class Background extends Element {
         this._bgImage = null;
     }
 
-    render(ctx, adaptation) {
+    render(ctx, aidctx, adaptation) {
         let { color, image } = this.config;
 
         // 画背景颜色

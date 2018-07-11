@@ -129,17 +129,19 @@ class Scene {
 
         // 擦除面板
         await drawCanvas();
+        // this._ctx.clearRect(0, 0, this._canvasRect.width, this._canvasRect.height);
 
         while (idx < elements.length) {
             let element = elements[idx];
             element.preload && await element.preload();
             this._ctx.save();
             element.render(this._ctx, adaptationSize);
-            await drawCanvas(true);
             ~this._systemInfo.system.indexOf('Android') && await new Promise(res => setTimeout(res, 50));
             this._ctx.restore();
+            await drawCanvas(true);
             idx++;
         }
+
     }
 }
 

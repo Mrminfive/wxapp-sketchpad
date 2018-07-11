@@ -179,6 +179,7 @@ export default class Element {
         let { _ctx, _adaptationConfig } = this;
         const { position, border, padding, containerWidth, containerHeight } = _adaptationConfig;
 
+        _ctx.save();
         // 界定内容区域
         _ctx.beginPath();
         _ctx.rect(
@@ -197,6 +198,7 @@ export default class Element {
 
         if (border.width === 0) return;
 
+        _ctx.save();
         _ctx.setLineWidth(border.width);
         _ctx.setStrokeStyle(border.color);
         _ctx.strokeRect(
@@ -204,6 +206,7 @@ export default class Element {
             width - border.width,
             height - border.width
         );
+        _ctx.restore();
     }
 
     _drawBackground(ctx, adaptation) {
@@ -211,6 +214,7 @@ export default class Element {
         let { width, height } = _adaptationConfig.rect;
         let { border } = _adaptationConfig;
 
+        _ctx.save();
         if (config.backgroundColor && config.backgroundColor !== COLOR_TRANSPRENT) {
             _ctx.setFillStyle(config.backgroundColor);
             _ctx.fillRect(
@@ -227,6 +231,7 @@ export default class Element {
                 height - (border.width * 2)
             );
         }
+        _ctx.restore();
     }
 
     _drawContent() {
@@ -266,6 +271,7 @@ export default class Element {
                 containerWidth
             );
         });
+        _ctx.restore();
     }
 
     /**

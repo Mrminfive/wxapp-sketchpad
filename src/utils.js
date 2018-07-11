@@ -108,25 +108,24 @@ function promisifyList(methods = []) {
 async function downloadFile(url) {
     const filePath = await downloader.download(url);
     // const { path } = await promisify('getImageInfo')({ src: filePath });
-    // return path;
-    if (checkIsWxFliePath(filePath)) {
-        return filePath;
-    } else if (checkIsNetworkFile(filePath)) {
-        let {
-            tempFilePath,
-            statusCode
-        } = await promisify('downloadFile')({
-            filePath
-        });
+    return filePath;
+    // if (checkIsWxFliePath(filePath)) {
+    //     return filePath;
+    // } else if (checkIsNetworkFile(filePath)) {
+    //     let {
+    //         tempFilePath,
+    //         statusCode
+    //     } = await promisify('downloadFile')({
+    //         url: filePath
+    //     });
 
-        if (statusCode !== 200 && statusCode !== 304) {
-            errorInfo('download file error, status code is ' + statusCode);
-        }
-
-        return tempFilePath;
-    } else {
-        errorInfo('The file url must be a network file or a wechat file');
-    }
+    //     if (statusCode !== 200 && statusCode !== 304) {
+    //         errorInfo('download file error, status code is ' + statusCode);
+    //     }
+    //     return tempFilePath;
+    // } else {
+    //     errorInfo('The file url must be a network file or a wechat file');
+    // }
 }
 
 /**

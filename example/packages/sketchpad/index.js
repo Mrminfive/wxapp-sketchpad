@@ -970,8 +970,7 @@ function getFile(key) {
 
 var downloadFile = function () {
     var _ref = asyncToGenerator(regenerator.mark(function _callee(url) {
-        var filePath, _ref2, tempFilePath, statusCode;
-
+        var filePath;
         return regenerator.wrap(function _callee$(_context) {
             while (1) {
                 switch (_context.prev = _context.next) {
@@ -981,41 +980,9 @@ var downloadFile = function () {
 
                     case 2:
                         filePath = _context.sent;
-
-                        if (!checkIsWxFliePath(filePath)) {
-                            _context.next = 7;
-                            break;
-                        }
-
                         return _context.abrupt('return', filePath);
 
-                    case 7:
-                        if (!checkIsNetworkFile(filePath)) {
-                            _context.next = 17;
-                            break;
-                        }
-
-                        _context.next = 10;
-                        return promisify('downloadFile')({
-                            filePath: filePath
-                        });
-
-                    case 10:
-                        _ref2 = _context.sent;
-                        tempFilePath = _ref2.tempFilePath;
-                        statusCode = _ref2.statusCode;
-
-
-                        if (statusCode !== 200 && statusCode !== 304) {
-                            errorInfo('download file error, status code is ' + statusCode);
-                        }
-
-                        return _context.abrupt('return', tempFilePath);
-
-                    case 17:
-                        errorInfo('The file url must be a network file or a wechat file');
-
-                    case 18:
+                    case 4:
                     case 'end':
                         return _context.stop();
                 }
@@ -1029,7 +996,7 @@ var downloadFile = function () {
 }();
 
 var saveImageToPhotosAlbum = function () {
-    var _ref3 = asyncToGenerator(regenerator.mark(function _callee2(filePath) {
+    var _ref2 = asyncToGenerator(regenerator.mark(function _callee2(filePath) {
         var url;
         return regenerator.wrap(function _callee2$(_context2) {
             while (1) {
@@ -1057,7 +1024,7 @@ var saveImageToPhotosAlbum = function () {
     }));
 
     return function saveImageToPhotosAlbum(_x4) {
-        return _ref3.apply(this, arguments);
+        return _ref2.apply(this, arguments);
     };
 }();
 
@@ -1274,6 +1241,9 @@ var Element = function () {
                 containerWidth = _adaptationConfig.containerWidth,
                 containerHeight = _adaptationConfig.containerHeight;
 
+
+            _ctx.save();
+
             _ctx.beginPath();
             _ctx.rect(position[0] + border.width + padding[3], position[1] + border.width + padding[0], containerWidth, containerHeight);
             _ctx.clip();
@@ -1291,11 +1261,13 @@ var Element = function () {
 
             if (border.width === 0) return;
 
+            _ctx.save();
             _ctx.setLineWidth(border.width);
             _ctx.setStrokeStyle(border.color);
             _ctx.strokeRect.apply(_ctx, toConsumableArray(_adaptationConfig.position.map(function (num) {
                 return num + border.width / 2;
             })).concat([width - border.width, height - border.width]));
+            _ctx.restore();
         }
     }, {
         key: '_drawBackground',
@@ -1309,6 +1281,7 @@ var Element = function () {
             var border = _adaptationConfig.border;
 
 
+            _ctx.save();
             if (config.backgroundColor && config.backgroundColor !== COLOR_TRANSPRENT) {
                 _ctx.setFillStyle(config.backgroundColor);
                 _ctx.fillRect.apply(_ctx, toConsumableArray(_adaptationConfig.position.map(function (num) {
@@ -1320,6 +1293,7 @@ var Element = function () {
                     return num + border.width;
                 })), [width - border.width * 2, height - border.width * 2]));
             }
+            _ctx.restore();
         }
     }, {
         key: '_drawContent',
@@ -1356,6 +1330,7 @@ var Element = function () {
             content.forEach(function (item, idx) {
                 _ctx.fillText(item.text, position[0] + border.width + padding[3] + alignMap[config.textAlign] * (containerWidth - item.width), position[1] + border.width + padding[0] + lineHeight * (idx + 0.5) + alignMap[config.textVerticalAlign] * (containerHeight - content.length * lineHeight), containerWidth);
             });
+            _ctx.restore();
         }
     }, {
         key: 'render',
@@ -1562,24 +1537,24 @@ var Scene = function () {
                             case 14:
                                 this._ctx.save();
                                 element.render(this._ctx, adaptationSize);
-                                _context2.next = 18;
-                                return drawCanvas(true);
-
-                            case 18:
                                 _context2.t1 = ~this._systemInfo.system.indexOf('Android');
 
                                 if (!_context2.t1) {
-                                    _context2.next = 22;
+                                    _context2.next = 20;
                                     break;
                                 }
 
-                                _context2.next = 22;
+                                _context2.next = 20;
                                 return new Promise(function (res) {
                                     return setTimeout(res, 50);
                                 });
 
-                            case 22:
+                            case 20:
                                 this._ctx.restore();
+                                _context2.next = 23;
+                                return drawCanvas(true);
+
+                            case 23:
                                 idx++;
                                 _context2.next = 8;
                                 break;
